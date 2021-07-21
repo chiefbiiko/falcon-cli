@@ -1,0 +1,9 @@
+[package]
+name = "pq-falcon-sigs"
+version = "0.0.0"
+authors = ["chiefbiiko <noah.anabiik.schwarz@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+clap = "3.0.0-beta.2"
+pqcrypto-falcon = "0.2.5"
