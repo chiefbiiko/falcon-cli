@@ -25,15 +25,21 @@ fn main() {
         )
         .get_matches();
 
-    if let Some(val) = matches.value_of("file") {
-        println!("value for file: {}", val);
-
-        if matches.is_present("sign") {
-            // TODO SIGN
-        } else {
-            // TODO VERIFY
-        }
+    let reader: Box<BufReader> = if let Some(filename) = matches.value_of("file") {
+        Box::new(BufReader::new(
+            fs::File::open(filename).expect("fopen failed"),
+        ))
     } else {
-        // TODO CHECK STDIN ELSE ERROR NO_FILE
+        Box::new(BufReader::new(io::stdin()))
+    };
+
+    let bytes: Vec<u8> = reader.lines().collect::<Result<_, _>>().unwrap();
+
+    println!(&String::from_utf8_lossy(bytes).unwrap());
+
+    if matches.is_present("sign") {
+        // TODO SIGN
+    } else {
+        // TODO VERIFY
     }
 }
