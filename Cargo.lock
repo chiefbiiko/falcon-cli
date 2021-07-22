@@ -146,6 +146,7 @@ dependencies = [
  "anyhow",
  "clap",
  "pqcrypto-falcon",
+ "pqcrypto-traits",
 ]
 
 [[package]]
