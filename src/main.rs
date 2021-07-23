@@ -1,12 +1,23 @@
 use anyhow::{anyhow, Result};
 use clap::{App, Arg};
-use pqcrypto_falcon::{falcon1024, falcon512};
+use pqcrypto_falcon::{falcon1024, falcon512, ffi};
 use pqcrypto_traits::sign::{PublicKey, SecretKey};
 use std::{
     fs::{self, File},
     io::{self, Read},
     path::Path,
 };
+
+struct Falcon1024PublicKey(u8);
+
+impl PublicKey for Falcon1024PublicKey {
+    as_bytes(&self) -> &[u8] {
+        self.0.as_ptr()
+    }
+    from_bytes(bytes: &[u8]) -> Result<Falcon1024PublicKey> {
+        // TODO: from slice to tuple struct
+    }
+}
 
 fn main() -> Result<()> {
     let matches = App::new("pq-falcon-sigs")
@@ -140,11 +151,16 @@ fn main() -> Result<()> {
             if matches.is_present("sign") {
                 let secret_key_buf = fs::read(secret_key_file)?;
                 println!("{:?}", &secret_key_buf);
+
+                assert_eq!(secret_key_buf.len(), ffi::PQCLEAN_FALCON1024_CLEAN_CRYPTO_SECRETKEYBYTES);
                 // TODO SIGN
             } else {
                 let public_key_buf = fs::read(public_key_file)?;
                 println!("{:?}", &public_key_buf);
-                
+
+                assert_eq!(public_key_buf.len(), ffi::PQCLEAN_FALCON1024_CLEAN_CRYPTO_PUBLICKEYBYTES);
+
+                let pk = Falcon1024PublicKey::from_bytes(&public_key_buf)?;
                 // TODO VERIFY
             }
         }
