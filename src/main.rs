@@ -1,10 +1,11 @@
 use anyhow::{anyhow, Result};
 use clap::{App, Arg};
-use pqcrypto_falcon::{falcon1024::*, falcon512::*};
+use pqcrypto_falcon::{falcon1024, falcon512};
 use pqcrypto_traits::sign::{PublicKey, SecretKey};
 use std::{
     fs::{self, File},
     io::{self, Read},
+    path::Path,
 };
 
 fn main() -> Result<()> {
@@ -103,24 +104,39 @@ fn main() -> Result<()> {
         }
         Some(_) | None => {
             if matches.is_present("keygen") {
-                // TODO: CHECK OVERWRITE BEHAVIOR
                 let (pk, sk) = pqcrypto_falcon::falcon1024::keypair();
-                fs::write(public_key_file, (&pk).as_bytes())?;
-                // TODO: write with narrow permissions
-                fs::write(secret_key_file, (&sk).as_bytes())?;
+
+                let public_key_file_exists =
+                    Path::new(public_key_file).exists();
+                let secret_key_file_exists =
+                    Path::new(secret_key_file).exists();
+
+                if !public_key_file_exists
+                    || (public_key_file_exists && matches.is_present("force"))
+                {
+                    // TODO: ASSERT OVERWRITE WHEN FILE EXISTS
+                    fs::write(public_key_file, (&pk).as_bytes())?;
+                } else if public_key_file_exists && !matches.is_present("force")
+                {
+                    println!(
+                        "WARNING: not overwriting existing public key file"
+                    )
+                }
+                if !secret_key_file_exists
+                    || (secret_key_file_exists && matches.is_present("force"))
+                {
+                    // TODO: write with narrow permissions & ASSERT OVERWRITE WHEN FILE EXISTS
+                    fs::write(secret_key_file, (&sk).as_bytes())?;
+                } else if secret_key_file_exists && !matches.is_present("force")
+                {
+                    println!(
+                        "WARNING: not overwriting existing secret key file"
+                    )
+                }
+
                 return Ok(());
             }
 
-            // TODO READ PUB & SEC KEY
-            // println!("public_key_file {:?}", public_key_file);
-            // let public_key_buf = fs::read(public_key_file)?;
-            // println!("&pubbuf {:?}", String::from_utf8_lossy(&public_key_buf));
-            // let secret_key_buf = fs::read(secret_key_file)?;
-            // let pk = PublicKey::from_bytes(&public_key_buf)?;
-            // let sk = SecretKey::from(&fs::read(secret_key_file)?)?;
-
-            // use pqcrypto_falcon::falcon1024::open;
-            // use pqcrypto_falcon::falcon1024::sign;
             if matches.is_present("sign") {
                 let secret_key_buf = fs::read(secret_key_file)?;
                 println!("{:?}", &secret_key_buf);
@@ -128,6 +144,7 @@ fn main() -> Result<()> {
             } else {
                 let public_key_buf = fs::read(public_key_file)?;
                 println!("{:?}", &public_key_buf);
+                
                 // TODO VERIFY
             }
         }
