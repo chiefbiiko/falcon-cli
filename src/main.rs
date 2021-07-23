@@ -1,21 +1,58 @@
 use anyhow::{anyhow, Result};
 use clap::{App, Arg};
 use pqcrypto_falcon::{falcon1024, falcon512, ffi};
-use pqcrypto_traits::sign::{PublicKey, SecretKey};
+use pqcrypto_traits::{
+    sign::{PublicKey, SecretKey, VerificationError},
+    Error as PQError,
+};
 use std::{
+    convert::TryFrom,
     fs::{self, File},
     io::{self, Read},
     path::Path,
 };
 
-struct Falcon1024PublicKey(u8);
+#[derive(Debug, Copy, PartialEq, Eq, Clone)]
+pub struct Falcon1024PublicKey(
+    [u8; ffi::PQCLEAN_FALCON1024_CLEAN_CRYPTO_PUBLICKEYBYTES],
+);
+
+#[derive(Clone)]
+pub struct Falcon1024SecretKey(
+    [u8; ffi::PQCLEAN_FALCON1024_CLEAN_CRYPTO_SECRETKEYBYTES],
+);
 
 impl PublicKey for Falcon1024PublicKey {
-    as_bytes(&self) -> &[u8] {
-        self.0.as_ptr()
+    fn as_bytes(&self) -> &[u8] {
+        &self.0
     }
-    from_bytes(bytes: &[u8]) -> Result<Falcon1024PublicKey> {
-        // TODO: from slice to tuple struct
+    fn from_bytes(bytes: &[u8]) -> Result<Falcon1024PublicKey, PQError> {
+        Ok(Falcon1024PublicKey(
+            <[u8; ffi::PQCLEAN_FALCON1024_CLEAN_CRYPTO_PUBLICKEYBYTES]>
+            ::try_from(bytes)
+            .map_err(|_| PQError::BadLength {
+                name: "InvalidPublicKeyBytes",
+                actual: bytes.len(),
+                expected: ffi::PQCLEAN_FALCON1024_CLEAN_CRYPTO_PUBLICKEYBYTES
+            })?
+        ))
+    }
+}
+
+impl SecretKey for Falcon1024SecretKey {
+    fn as_bytes(&self) -> &[u8] {
+        &self.0
+    }
+    fn from_bytes(bytes: &[u8]) -> Result<Falcon1024SecretKey, PQError> {
+        Ok(Falcon1024SecretKey(
+            <[u8; ffi::PQCLEAN_FALCON1024_CLEAN_CRYPTO_SECRETKEYBYTES]>
+            ::try_from(bytes)
+            .map_err(|_| PQError::BadLength {
+                name: "InvalidSecretKeyBytes",
+                actual: bytes.len(),
+                expected: ffi::PQCLEAN_FALCON1024_CLEAN_CRYPTO_SECRETKEYBYTES
+            })?
+        ))
     }
 }
 
@@ -64,13 +101,19 @@ fn main() -> Result<()> {
             Arg::new("degree")
                 .short('d')
                 .takes_value(true)
-                .about("subject file"),
+                .about("either 512 or 1024"),
         )
         .arg(
             Arg::new("file")
                 .short('f')
                 .takes_value(true)
-                .about("subject file"),
+                .about("input file"),
+        )
+        .arg(
+            Arg::new("output")
+                .short('o')
+                .takes_value(true)
+                .about("output file path"),
         )
         .arg(
             Arg::new("force")
@@ -81,7 +124,7 @@ fn main() -> Result<()> {
         .arg(Arg::new("FILE").about("subject file").index(1))
         .get_matches();
 
-    let mut reader: Box<dyn Read> =
+    let mut file_rdr: Box<dyn Read> =
         if let Some(filename) = matches.value_of("file") {
             Box::new(File::open(filename)?)
         } else if let Some(filename) = matches.value_of("FILE") {
@@ -90,24 +133,20 @@ fn main() -> Result<()> {
             // TODO: assert stdin has input
             Box::new(io::stdin())
         };
-    let mut buf: Vec<u8> = Vec::new();
-    let _n: usize = reader.read_to_end(&mut buf)?;
+    let mut file_buf: Vec<u8> = Vec::new();
+    let _n: usize = file_rdr.read_to_end(&mut file_buf)?;
 
     let home_dir = home::home_dir().ok_or(anyhow!("cannot find home dir"))?;
-    let default_public_key_file = format!(
+    let default_pk_file = format!(
         "{}/.pq-falcon-sigs/public.key",
         &home_dir.as_path().display()
     );
-    let default_secret_key_file = format!(
+    let default_sk_file = format!(
         "{}/.pq-falcon-sigs/secret.key",
         &home_dir.as_path().display()
     );
-    let public_key_file = matches
-        .value_of("public-key")
-        .unwrap_or(&default_public_key_file);
-    let secret_key_file = matches
-        .value_of("secret-key")
-        .unwrap_or(&default_secret_key_file);
+    let pk_file = matches.value_of("public-key").unwrap_or(&default_pk_file);
+    let sk_file = matches.value_of("secret-key").unwrap_or(&default_sk_file);
 
     match matches.value_of("degree") {
         Some(degree) if degree == "512" => {
@@ -117,29 +156,25 @@ fn main() -> Result<()> {
             if matches.is_present("keygen") {
                 let (pk, sk) = pqcrypto_falcon::falcon1024::keypair();
 
-                let public_key_file_exists =
-                    Path::new(public_key_file).exists();
-                let secret_key_file_exists =
-                    Path::new(secret_key_file).exists();
+                let pk_file_exists = Path::new(pk_file).exists();
+                let sk_file_exists = Path::new(sk_file).exists();
 
-                if !public_key_file_exists
-                    || (public_key_file_exists && matches.is_present("force"))
+                if !pk_file_exists
+                    || (pk_file_exists && matches.is_present("force"))
                 {
                     // TODO: ASSERT OVERWRITE WHEN FILE EXISTS
-                    fs::write(public_key_file, (&pk).as_bytes())?;
-                } else if public_key_file_exists && !matches.is_present("force")
-                {
+                    fs::write(pk_file, (&pk).as_bytes())?;
+                } else if pk_file_exists && !matches.is_present("force") {
                     println!(
                         "WARNING: not overwriting existing public key file"
                     )
                 }
-                if !secret_key_file_exists
-                    || (secret_key_file_exists && matches.is_present("force"))
+                if !sk_file_exists
+                    || (sk_file_exists && matches.is_present("force"))
                 {
                     // TODO: write with narrow permissions & ASSERT OVERWRITE WHEN FILE EXISTS
-                    fs::write(secret_key_file, (&sk).as_bytes())?;
-                } else if secret_key_file_exists && !matches.is_present("force")
-                {
+                    fs::write(sk_file, (&sk).as_bytes())?;
+                } else if sk_file_exists && !matches.is_present("force") {
                     println!(
                         "WARNING: not overwriting existing secret key file"
                     )
@@ -149,19 +184,40 @@ fn main() -> Result<()> {
             }
 
             if matches.is_present("sign") {
-                let secret_key_buf = fs::read(secret_key_file)?;
-                println!("{:?}", &secret_key_buf);
+                let sk_buf = fs::read(sk_file)?;
+                let sk = Falcon1024SecretKey::from_bytes(&sk_buf)?;
+                // println!("$$$$$ sk\n{:?}", &sk);
 
-                assert_eq!(secret_key_buf.len(), ffi::PQCLEAN_FALCON1024_CLEAN_CRYPTO_SECRETKEYBYTES);
+                let signed_msg = falcon1024::sign(&file_buf, &sk);
                 // TODO SIGN
             } else {
-                let public_key_buf = fs::read(public_key_file)?;
-                println!("{:?}", &public_key_buf);
+                let pk_buf = fs::read(pk_file)?;
+                let pk = Falcon1024PublicKey::from_bytes(&pk_buf)?;
+                let signed_msg = falcon1024::SignedMessage(file_buf);
 
-                assert_eq!(public_key_buf.len(), ffi::PQCLEAN_FALCON1024_CLEAN_CRYPTO_PUBLICKEYBYTES);
+                let verified_file = falcon1024::open(&signed_msg, &pk)
+                    .map_err(|_| VerificationError::InvalidSignature)?;
 
-                let pk = Falcon1024PublicKey::from_bytes(&public_key_buf)?;
-                // TODO VERIFY
+                if let Some(output_path) = matches.value_of("output") {
+                    let output_path_exists = Path::new(output_path).exists();
+
+                    if !output_path_exists
+                        || (output_path_exists && matches.is_present("force"))
+                    {
+                        // TODO: ASSERT OVERWRITE WHEN FILE EXISTS
+                        fs::write(output_path, &verified_file)?;
+                    } else if output_path_exists && !matches.is_present("force")
+                    {
+                        println!(
+                            "WARNING: not overwriting existing output file"
+                        )
+                    }
+                } else {
+                    // TODO: write verified_file to stdout
+                    io::stdout().write(&verified_file)?
+                }
+
+                Ok(()) // exit 0
             }
         }
     };
