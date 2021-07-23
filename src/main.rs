@@ -60,6 +60,12 @@ fn main() -> Result<()> {
                 .takes_value(true)
                 .about("subject file"),
         )
+        .arg(
+            Arg::new("force")
+                .short('F')
+                .takes_value(false)
+                .about("i.e. overwrite possibly existing key files"),
+        )
         .arg(Arg::new("FILE").about("subject file").index(1))
         .get_matches();
 
@@ -117,10 +123,11 @@ fn main() -> Result<()> {
             // use pqcrypto_falcon::falcon1024::sign;
             if matches.is_present("sign") {
                 let secret_key_buf = fs::read(secret_key_file)?;
+                println!("{:?}", &secret_key_buf);
                 // TODO SIGN
             } else {
                 let public_key_buf = fs::read(public_key_file)?;
-
+                println!("{:?}", &public_key_buf);
                 // TODO VERIFY
             }
         }
