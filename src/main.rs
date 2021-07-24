@@ -7,6 +7,7 @@ use pqcrypto_traits::sign::{
 use std::{
     fs::{self, File},
     io::{self, Read, Write},
+    os::unix::fs::PermissionsExt,
     path::Path,
 };
 
@@ -14,7 +15,6 @@ fn dump_output(matches: &ArgMatches, bytes: &[u8]) -> Result<()> {
     if let Some(output) = matches.value_of("output") {
         let output_exists = Path::new(output).exists();
         if !output_exists || (output_exists && matches.is_present("force")) {
-            // TODO: ASSERT OVERWRITE WHEN FILE EXISTS
             fs::write(output, bytes)?;
             Ok(())
         } else {
@@ -100,10 +100,10 @@ fn main() -> Result<()> {
         } else if let Some(filename) = matches.value_of("FILE") {
             Box::new(File::open(filename)?)
         } else {
-            // TODO: assert stdin has input
             Box::new(io::stdin())
         };
     let mut file_buf: Vec<u8> = Vec::new();
+    // TODO: enforce a read timeout of ~1s, if then stdin still empty bail
     let _n: usize = file_rdr.read_to_end(&mut file_buf)?;
 
     let home_dir = home::home_dir().ok_or(anyhow!("cannot find home dir"))?;
@@ -132,22 +132,24 @@ fn main() -> Result<()> {
                 if !pk_file_exists
                     || (pk_file_exists && matches.is_present("force"))
                 {
-                    // TODO: ASSERT OVERWRITE WHEN FILE EXISTS
                     fs::write(pk_file, (&pk).as_bytes())?;
                 } else if pk_file_exists && !matches.is_present("force") {
-                    println!(
-                        "WARNING: not overwriting existing public key file"
-                    )
+                    return Err(anyhow!(
+                        "not overwriting existing public key file"
+                    ));
                 }
                 if !sk_file_exists
                     || (sk_file_exists && matches.is_present("force"))
                 {
-                    // TODO: write with narrow permissions & ASSERT OVERWRITE WHEN FILE EXISTS
                     fs::write(sk_file, (&sk).as_bytes())?;
+                    fs::set_permissions(
+                        sk_file,
+                        fs::Permissions::from_mode(0o600),
+                    )?;
                 } else if sk_file_exists && !matches.is_present("force") {
-                    println!(
-                        "WARNING: not overwriting existing secret key file"
-                    )
+                    return Err(anyhow!(
+                        "not overwriting existing secret key file"
+                    ));
                 }
 
                 return Ok(());
