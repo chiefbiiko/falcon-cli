@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use clap::{App, Arg, ArgMatches};
 use pqcrypto_falcon::{falcon1024, falcon512};
 use pqcrypto_traits::sign::{
@@ -8,13 +8,13 @@ use std::{
     fs::{self, File},
     io::{self, Read, Write},
     os::unix::fs::PermissionsExt,
-    path::Path,
+    path::{Path, PathBuf},
 };
 
-fn dump_output(matches: &ArgMatches, bytes: &[u8]) -> Result<()> {
-    if let Some(output) = matches.value_of("output") {
+fn dump_output(clap: &ArgMatches, bytes: &[u8]) -> Result<()> {
+    if let Some(output) = clap.value_of("output") {
         let output_exists = Path::new(output).exists();
-        if !output_exists || (output_exists && matches.is_present("force")) {
+        if !output_exists || (output_exists && clap.is_present("force")) {
             fs::write(output, bytes)?;
             Ok(())
         } else {
@@ -27,7 +27,7 @@ fn dump_output(matches: &ArgMatches, bytes: &[u8]) -> Result<()> {
 }
 
 fn main() -> Result<()> {
-    let matches = App::new("pq-falcon-sigs")
+    let clap = App::new("pq-falcon-sigs")
         .version("0.0.0")
         .author("Noah Anabiik Schwarz <noah.anabiik.schwarz@gmail.com>")
         .about("sign and verify files with the post-quantum signature scheme FALCON")
@@ -95,9 +95,9 @@ fn main() -> Result<()> {
         .get_matches();
 
     let mut file_rdr: Box<dyn Read> =
-        if let Some(filename) = matches.value_of("file") {
+        if let Some(filename) = clap.value_of("file") {
             Box::new(File::open(filename)?)
-        } else if let Some(filename) = matches.value_of("FILE") {
+        } else if let Some(filename) = clap.value_of("FILE") {
             Box::new(File::open(filename)?)
         } else {
             Box::new(io::stdin())
@@ -107,61 +107,56 @@ fn main() -> Result<()> {
     let _n: usize = file_rdr.read_to_end(&mut file_buf)?;
 
     let home_dir = home::home_dir().ok_or(anyhow!("cannot find home dir"))?;
-    let default_pk_file = format!(
-        "{}/.pq-falcon-sigs/public.key",
-        &home_dir.as_path().display()
-    );
-    let default_sk_file = format!(
-        "{}/.pq-falcon-sigs/secret.key",
-        &home_dir.as_path().display()
-    );
-    let pk_file = matches.value_of("public-key").unwrap_or(&default_pk_file);
-    let sk_file = matches.value_of("secret-key").unwrap_or(&default_sk_file);
+    let default_pk_file = home_dir.join(".pq-falcon-sigs/public.key");
+    let default_sk_file = home_dir.join(".pq-falcon-sigs/secret.key");
+    let pk_file = clap
+        .value_of("public-key")
+        .map(PathBuf::from)
+        .unwrap_or(default_pk_file);
+    let sk_file = clap
+        .value_of("secret-key")
+        .map(PathBuf::from)
+        .unwrap_or(default_sk_file);
 
-    match matches.value_of("degree") {
+    match clap.value_of("degree") {
         Some(degree) if degree == "512" => {
             // TODO
         }
         Some(_) | None => {
-            if matches.is_present("keygen") {
+            // TODO: polymorph over 512, 1024
+            if clap.is_present("keygen") {
+                // TODO: segregate this block into a keygen func
                 let (pk, sk) = pqcrypto_falcon::falcon1024::keypair();
-
-                let pk_file_exists = Path::new(pk_file).exists();
-                let sk_file_exists = Path::new(sk_file).exists();
-
+                let pk_file_exists = pk_file.as_path().exists();
+                let sk_file_exists = sk_file.as_path().exists();
                 if !pk_file_exists
-                    || (pk_file_exists && matches.is_present("force"))
+                    || (pk_file_exists && clap.is_present("force"))
                 {
-                    fs::write(pk_file, (&pk).as_bytes())?;
-                } else if pk_file_exists && !matches.is_present("force") {
-                    return Err(anyhow!(
-                        "not overwriting existing public key file"
-                    ));
+                    fs::write(&pk_file, pk.as_bytes())?;
+                } else if pk_file_exists && !clap.is_present("force") {
+                    bail!("not overwriting existing public key file");
                 }
                 if !sk_file_exists
-                    || (sk_file_exists && matches.is_present("force"))
+                    || (sk_file_exists && clap.is_present("force"))
                 {
-                    fs::write(sk_file, (&sk).as_bytes())?;
+                    fs::write(&sk_file, sk.as_bytes())?;
                     fs::set_permissions(
-                        sk_file,
+                        &sk_file,
                         fs::Permissions::from_mode(0o600),
                     )?;
-                } else if sk_file_exists && !matches.is_present("force") {
-                    return Err(anyhow!(
-                        "not overwriting existing secret key file"
-                    ));
+                } else if sk_file_exists && !clap.is_present("force") {
+                    bail!("not overwriting existing secret key file");
                 }
-
                 return Ok(());
             }
 
-            if matches.is_present("sign") {
+            if clap.is_present("sign") {
                 let sk_buf = fs::read(sk_file)?;
                 let sk = falcon1024::SecretKey::from_bytes(&sk_buf)?;
 
                 let signed_msg = falcon1024::sign(&file_buf, &sk);
 
-                dump_output(&matches, signed_msg.as_bytes())?;
+                dump_output(&clap, signed_msg.as_bytes())?;
             } else {
                 let pk_buf = fs::read(pk_file)?;
                 let pk = falcon1024::PublicKey::from_bytes(&pk_buf)?;
@@ -171,7 +166,7 @@ fn main() -> Result<()> {
                 let verified_file = falcon1024::open(&signed_msg, &pk)
                     .map_err(|_| VerificationError::InvalidSignature)?;
 
-                dump_output(&matches, &verified_file)?;
+                dump_output(&clap, &verified_file)?;
             }
         }
     };
