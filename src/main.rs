@@ -11,6 +11,30 @@ use std::{
     path::{Path, PathBuf},
 };
 
+fn keygen(clap: &ArgMatches, pk_file: Path, sk_file: Path) -> Result<()> {
+    let (pk, sk) = if clap.value_of("degree") == Some("512") {
+        pqcrypto_falcon::falcon512::keypair()
+    } else {
+        pqcrypto_falcon::falcon1024::keypair()
+    };
+    // TODO: segregate this block into a keygen func
+    // let (pk, sk) = pqcrypto_falcon::falcon1024::keypair();
+    let pk_file_exists = pk_file.as_path().exists();
+    let sk_file_exists = sk_file.as_path().exists();
+    if !pk_file_exists || (pk_file_exists && clap.is_present("force")) {
+        fs::write(&pk_file, pk.as_bytes())?;
+    } else if pk_file_exists && !clap.is_present("force") {
+        bail!("not overwriting existing public key file");
+    }
+    if !sk_file_exists || (sk_file_exists && clap.is_present("force")) {
+        fs::write(&sk_file, sk.as_bytes())?;
+        fs::set_permissions(&sk_file, fs::Permissions::from_mode(0o600))?;
+    } else if sk_file_exists && !clap.is_present("force") {
+        bail!("not overwriting existing secret key file");
+    }
+    Ok(())
+}
+
 fn dump_output(clap: &ArgMatches, bytes: &[u8]) -> Result<()> {
     if let Some(output) = clap.value_of("output") {
         let output_exists = Path::new(output).exists();
@@ -123,31 +147,31 @@ fn main() -> Result<()> {
             // TODO
         }
         Some(_) | None => {
-            // TODO: polymorph over 512, 1024
             if clap.is_present("keygen") {
-                // TODO: segregate this block into a keygen func
-                let (pk, sk) = pqcrypto_falcon::falcon1024::keypair();
-                let pk_file_exists = pk_file.as_path().exists();
-                let sk_file_exists = sk_file.as_path().exists();
-                if !pk_file_exists
-                    || (pk_file_exists && clap.is_present("force"))
-                {
-                    fs::write(&pk_file, pk.as_bytes())?;
-                } else if pk_file_exists && !clap.is_present("force") {
-                    bail!("not overwriting existing public key file");
-                }
-                if !sk_file_exists
-                    || (sk_file_exists && clap.is_present("force"))
-                {
-                    fs::write(&sk_file, sk.as_bytes())?;
-                    fs::set_permissions(
-                        &sk_file,
-                        fs::Permissions::from_mode(0o600),
-                    )?;
-                } else if sk_file_exists && !clap.is_present("force") {
-                    bail!("not overwriting existing secret key file");
-                }
-                return Ok(());
+                keygen(&clap, &pk_file, &sk_file)?;
+                // // TODO: segregate this block into a keygen func
+                // let (pk, sk) = pqcrypto_falcon::falcon1024::keypair();
+                // let pk_file_exists = pk_file.as_path().exists();
+                // let sk_file_exists = sk_file.as_path().exists();
+                // if !pk_file_exists
+                //     || (pk_file_exists && clap.is_present("force"))
+                // {
+                //     fs::write(&pk_file, pk.as_bytes())?;
+                // } else if pk_file_exists && !clap.is_present("force") {
+                //     bail!("not overwriting existing public key file");
+                // }
+                // if !sk_file_exists
+                //     || (sk_file_exists && clap.is_present("force"))
+                // {
+                //     fs::write(&sk_file, sk.as_bytes())?;
+                //     fs::set_permissions(
+                //         &sk_file,
+                //         fs::Permissions::from_mode(0o600),
+                //     )?;
+                // } else if sk_file_exists && !clap.is_present("force") {
+                //     bail!("not overwriting existing secret key file");
+                // }
+                // return Ok(());
             }
 
             if clap.is_present("sign") {
