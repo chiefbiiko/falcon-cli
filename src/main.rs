@@ -1,5 +1,6 @@
 use anyhow::{anyhow, bail, Result};
 use atty::Stream;
+use base64;
 use clap::{App, Arg, ArgMatches};
 use pqcrypto_falcon::{falcon1024, falcon512};
 use pqcrypto_traits::sign::{PublicKey, SecretKey, SignedMessage};
@@ -58,8 +59,8 @@ fn dump_output(clap: &ArgMatches, bytes: &[u8]) -> Result<()> {
 fn main() -> Result<()> {
     let clap = App::new("pq-falcon-sigs")
         .version("0.0.0")
-        .author("Noah Anabiik Schwarz <noah.anabiik.schwarz@gmail.com>")
-        .about("sign and verify files with the post-quantum signature scheme FALCON")
+        .author("Noah Anabiik Schwarz <hello@nugget.digital>")
+        .about("Sign and verify files with the post-quantum signature scheme FALCON")
         .arg(
             Arg::new("keygen")
                 .short('K')
@@ -139,11 +140,11 @@ fn main() -> Result<()> {
 
     let home_dir = home::home_dir().ok_or(anyhow!("cannot find home dir"))?;
     let pk_file = clap
-        .value_of("public-key")
+        .value_of("public-key-file")
         .map(PathBuf::from)
         .unwrap_or_else(|| home_dir.join(".pq-falcon-sigs/public.key"));
     let sk_file = clap
-        .value_of("secret-key")
+        .value_of("secret-key-file")
         .map(PathBuf::from)
         .unwrap_or_else(|| home_dir.join(".pq-falcon-sigs/secret.key"));
 
@@ -161,7 +162,11 @@ fn main() -> Result<()> {
 
                 dump_output(&clap, signed_msg.as_bytes())?;
             } else {
-                let pk_buf = fs::read(pk_file)?;
+                let pk_buf = if clap.is_present("public-key") {
+                    base64::decode(clap.value_of("public-key").unwrap())?
+                } else {
+                    fs::read(pk_file)?
+                };
                 let pk = falcon512::PublicKey::from_bytes(&pk_buf)?;
                 let signed_msg =
                     falcon512::SignedMessage::from_bytes(&file_buf)?;
@@ -181,7 +186,11 @@ fn main() -> Result<()> {
 
                 dump_output(&clap, signed_msg.as_bytes())?;
             } else {
-                let pk_buf = fs::read(pk_file)?;
+                let pk_buf = if clap.is_present("public-key") {
+                    base64::decode(clap.value_of("public-key").unwrap())?
+                } else {
+                    fs::read(pk_file)?
+                };
                 let pk = falcon1024::PublicKey::from_bytes(&pk_buf)?;
                 let signed_msg =
                     falcon1024::SignedMessage::from_bytes(&file_buf)?;
