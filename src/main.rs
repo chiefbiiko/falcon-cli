@@ -61,6 +61,8 @@ fn main() -> Result<()> {
         .version("0.1.0")
         .author("chiefbiiko <hello@nugget.digital>")
         .about("Sign and verify files with the post-quantum signature scheme FALCON")
+        .after_help("If no input/output file(s) are given stdin/stdout are used for IO.")
+        .after_long_help("If no input/output file(s) are given stdin/stdout are used for IO.")
         .arg(
             Arg::new("keygen")
                 .short('K')
@@ -78,13 +80,13 @@ fn main() -> Result<()> {
             Arg::new("public-key-file")
                 .short('p')
                 .takes_value(true)
-                .about("Public key file (default: ~/.pq-falcon-sigs/public.key)"),
+                .about("Public key file; default: ~/.pq-falcon-sigs/public.key"),
         )
         .arg(
             Arg::new("secret-key-file")
                 .short('s')
                 .takes_value(true)
-                .about("Secret key file (default: ~/.pq-falcon-sigs/secret.key)"),
+                .about("Secret key file; default: ~/.pq-falcon-sigs/secret.key"),
         )
         .arg(
             Arg::new("open")
@@ -104,7 +106,7 @@ fn main() -> Result<()> {
             Arg::new("degree")
                 .short('d')
                 .takes_value(true)
-                .about("512 or 1024"),
+                .about("512 or 1024; default 1024"),
         )
         .arg(
             Arg::new("file")

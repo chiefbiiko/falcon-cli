@@ -40,7 +40,7 @@ jobs:
         os:
           - ubuntu-20.04
           - macos-10.15
-          - windows-2019
+          # - windows-2019 # windows fails compilin' pqcrypto
     steps:
       - uses: actions/checkout@v2.3.4
 
@@ -50,7 +50,7 @@ jobs:
       - name: make sure a correct rust version is installed
         uses: hecrj/setup-rust-action@v1.3.4
         with:
-          rust-version: "1.52.1"
+          rust-version: "1.53.0"
 
       - name: build pq-falcon-sigs
         run: cargo build --release --manifest-path=./Cargo.toml
@@ -104,13 +104,13 @@ jobs:
           asset_name: pq-falcon-sigs-${{ env.PUSHED_TAG }}-x86_64-apple-darwin.gz
           asset_content_type: application/gzip
 
-      - name: upload the windows binary
-        if: ${{ matrix.os == 'windows-2019' }}
-        uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ env.RELEASE_UPLOAD_URL }}
-          asset_path: ./target/release/pq-falcon-sigs
-          asset_name: pq-falcon-sigs-${{ env.PUSHED_TAG }}-x86_64-pc-windows-msvc
-          asset_content_type: application/octet-stream
+      # - name: upload the windows binary
+      #   if: ${{ matrix.os == 'windows-2019' }}
+      #   uses: actions/upload-release-asset@v1.0.2
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ env.RELEASE_UPLOAD_URL }}
+      #     asset_path: ./target/release/pq-falcon-sigs
+      #     asset_name: pq-falcon-sigs-${{ env.PUSHED_TAG }}-x86_64-pc-windows-msvc
+      #     asset_content_type: application/octet-stream

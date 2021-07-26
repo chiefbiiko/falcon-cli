@@ -20,7 +20,7 @@ release_url=https://github.com/chiefbiiko/pq-falcon-sigs/releases/download/v0.1.
 curl -fsSL $release_url | gunzip > /usr/local/bin/pq-falcon-sigs
 ```
 
-Prebuilds are available for Linux, macOS, and Windows
+Prebuilds are available for Linux, and macOS ~~, Windows~~
 
 ## Usage
 
@@ -33,7 +33,7 @@ USAGE:
     pq-falcon-sigs [FLAGS] [OPTIONS] [FILE]
 
 ARGS:
-    <FILE>    Input file path
+    <FILE>    Input file
 
 FLAGS:
     -F, --force      Overwrites possibly existing key files
@@ -44,14 +44,16 @@ FLAGS:
     -V, --version    Prints version information
 
 OPTIONS:
-    -d <degree>                 512 or 1024
-    -f <file>                   Input file path
-    -o <output>                 Output file path
+    -d <degree>                 512 or 1024; default 1024
+    -f <file>                   Input file
+    -o <output>                 Output file
     -k <public-key>             Base64 public key
-    -p <public-key-file>        Public key file (default: ~/.pq-falcon-sigs/public.key)
-    -s <secret-key-file>        Secret key file (default: ~/.pq-falcon-sigs/secret.key)
+    -p <public-key-file>        Public key file; default: ~/.pq-falcon-sigs/public.key
+    -s <secret-key-file>        Secret key file; default: ~/.pq-falcon-sigs/secret.key
+
+If no input/output file(s) are given stdin/stdout are used for IO.
 ```
 
-## license
+## License
 
 [MIT](./LICENSE)
