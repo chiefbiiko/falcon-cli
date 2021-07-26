@@ -1,0 +1,133 @@
+name: prebuild
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  prerelease:
+    runs-on: ${{ matrix.os }}
+      strategy:
+        matrix:
+          os:
+            - ubuntu-20.04
+            - macos-10.15
+            - windows-2019
+    steps:
+      - name: get the current version tag
+        run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+
+      - name: pre release draft
+        id: create_release
+        uses: actions/create-release@v1.1.4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.PUSHED_TAG }}
+          release_name: ${{ env.PUSHED_TAG }}
+          draft: true
+          prerelease: true
+
+      - name: prep a release upload url artifact
+        run: echo "${{ steps.create_release.outputs.upload_url }}" > ./release_upload_url.txt
+
+      - name: upload the release upload url artifact
+        uses: actions/upload-artifact@v2.2.2
+        with:
+          name: release_upload_url
+          path: ./release_upload_url.txt
+
+  prebuild_pq_falcon_sigs:
+    needs: prerelease
+    runs-on: ${{ matrix.os }}
+      strategy:
+        matrix:
+          os:
+            - ubuntu-20.04
+            - macos-10.15
+            - windows-2019
+    steps:
+      - uses: actions/checkout@v2.3.4
+
+      - name: get the current version tag
+        run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+
+      - name: make sure a correct rust version is installed
+        uses: hecrj/setup-rust-action@v1.3.4
+        with:
+          rust-version: "1.53.0"
+
+      - name: build pq-falcon-sigs
+        run: cargo build --release --manifest-path=./Cargo.toml
+
+      - name: gzipup the binary
+        if: ${{ matrix.os != 'windows-2019' }}
+        run: gzip -c ./target/release/pq-falcon-sigs > ./pq-falcon-sigs.gz
+
+      - name: sha256sum the gzipd binary
+        if: ${{ matrix.os != 'windows-2019' }}
+        run: sha256sum -b ./pq-falcon-sigs.gz | grep -oE '^[a-f0-9]+' > ./pq-falcon-sigs.gz.sha256sum
+
+      - name: download the release upload url artifact
+        uses: actions/download-artifact@v2.0.8
+        with:
+          name: release_upload_url
+
+      - name: set the release upload url as an env var
+        run: echo "RELEASE_UPLOAD_URL=$(<./release_upload_url.txt)" >> $GITHUB_ENV
+
+      - name: upload the ubuntu binary's sha256sum
+        if: ${{ matrix.os == 'ubuntu-20.04' }}
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ env.RELEASE_UPLOAD_URL }}
+          asset_path: ./pq-falcon-sigs.gz.sha256sum
+          asset_name: pq-falcon-sigs-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz.sha256sum
+          asset_content_type: application/gzip
+
+      - name: upload the ubuntu binary
+        if: ${{ matrix.os == 'ubuntu-20.04' }}
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ env.RELEASE_UPLOAD_URL }}
+          asset_path: ./pq-falcon-sigs.gz
+          asset_name: pq-falcon-sigs-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz
+          asset_content_type: application/gzip
+
+      - name: upload the macos binary's sha256sum
+        if: ${{ matrix.os == 'macos-10.15' }}
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ env.RELEASE_UPLOAD_URL }}
+          asset_path: ./pq-falcon-sigs.gz.sha256sum
+          asset_name: pq-falcon-sigs-${{ env.PUSHED_TAG }}-x86_64-apple-darwin.gz.sha256sum
+          asset_content_type: application/gzip
+
+      - name: upload the macos binary
+        if: ${{ matrix.os == 'macos-10.15' }}
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ env.RELEASE_UPLOAD_URL }}
+          asset_path: ./pq-falcon-sigs.gz
+          asset_name: pq-falcon-sigs-${{ env.PUSHED_TAG }}-x86_64-apple-darwin.gz
+          asset_content_type: application/gzip
+
+      - name: upload the windows binary
+        if: ${{ matrix.os == 'windows-2019' }}
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ env.RELEASE_UPLOAD_URL }}
+          asset_path: ./pq-falcon-sigs.gz
+          asset_name: pq-falcon-sigs-${{ env.PUSHED_TAG }}-x86_64-pc-windows-msvc.gz
+          asset_content_type: application/gzip

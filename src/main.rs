@@ -58,70 +58,74 @@ fn dump_output(clap: &ArgMatches, bytes: &[u8]) -> Result<()> {
 
 fn main() -> Result<()> {
     let clap = App::new("pq-falcon-sigs")
-        .version("0.0.0")
-        .author("Noah Anabiik Schwarz <hello@nugget.digital>")
+        .version("0.1.0")
+        .author("chiefbiiko <hello@nugget.digital>")
         .about("Sign and verify files with the post-quantum signature scheme FALCON")
         .arg(
             Arg::new("keygen")
                 .short('K')
+                .long("keygen")
                 .takes_value(false)
-                .about("generates a fresh FALCON keypair"),
+                .about("Generates a fresh FALCON keypair"),
         )
         .arg(
             Arg::new("public-key")
                 .short('k')
                 .takes_value(true)
-                .about("base64 public key"),
+                .about("Base64 public key"),
         )
         .arg(
             Arg::new("public-key-file")
                 .short('p')
                 .takes_value(true)
-                .about("public key file (default: ~/.pq-falcon-sigs/public.key)"),
+                .about("Public key file (default: ~/.pq-falcon-sigs/public.key)"),
         )
         .arg(
             Arg::new("secret-key-file")
                 .short('s')
                 .takes_value(true)
-                .about("secret key file (default: ~/.pq-falcon-sigs/secret.key)"),
+                .about("Secret key file (default: ~/.pq-falcon-sigs/secret.key)"),
         )
         .arg(
             Arg::new("open")
                 .short('O')
+                .long("open")
                 .takes_value(false)
-                .about("verifies a file"),
+                .about("Verifies a file"),
         )
         .arg(
             Arg::new("sign")
                 .short('S')
+                .long("sign")
                 .takes_value(false)
-                .about("signs a file"),
+                .about("Signs a file"),
         )
         .arg(
             Arg::new("degree")
                 .short('d')
                 .takes_value(true)
-                .about("either 512 or 1024"),
+                .about("512 or 1024"),
         )
         .arg(
             Arg::new("file")
                 .short('f')
                 .takes_value(true)
-                .about("input file"),
+                .about("Input file"),
         )
         .arg(
             Arg::new("output")
                 .short('o')
                 .takes_value(true)
-                .about("output file path"),
+                .about("Output file"),
         )
         .arg(
             Arg::new("force")
                 .short('F')
+                .long("force")
                 .takes_value(false)
-                .about("i.e. overwrite possibly existing key files"),
+                .about("Overwrites possibly existing key files"),
         )
-        .arg(Arg::new("FILE").about("input file").index(1))
+        .arg(Arg::new("FILE").about("Input file").index(1))
         .get_matches();
 
     let mut file_buf: Vec<u8> = Vec::new();
@@ -150,6 +154,7 @@ fn main() -> Result<()> {
 
     if clap.is_present("keygen") {
         keygen(&clap, pk_file.as_path(), sk_file.as_path())?;
+        return Ok(());
     }
 
     match clap.value_of("degree") {
