@@ -7,6 +7,7 @@ use pqcrypto_traits::sign::{PublicKey, SecretKey, SignedMessage};
 use std::{
     fs::{self, File},
     io::{self, Read, Write},
+    #[cfg(not(target_os = "windows"))]
     os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
 };
@@ -32,6 +33,7 @@ fn keygen(clap: &ArgMatches, pk_file: &Path, sk_file: &Path) -> Result<()> {
 
     if !sk_file_exists || (sk_file_exists && clap.is_present("force")) {
         fs::write(&sk_file, sk.as_bytes())?;
+        #[cfg(not(target_os = "windows"))]
         fs::set_permissions(&sk_file, fs::Permissions::from_mode(0o600))?;
     } else if sk_file_exists && !clap.is_present("force") {
         bail!("not overwriting existing secret key file");
