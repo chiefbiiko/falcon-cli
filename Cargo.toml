@@ -1,18 +1,12 @@
 [package]
 name = "pq-falcon-sigs"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["chiefbiiko hello@nugget.digital>"]
 edition = "2018"
 
-[profile.release]
-# fewer codegen units == smaller binary == longer compile time
-codegen-units = 1
-# no stack unwindin'
-panic = 'abort'
-# enable link time optimizations
-lto = true
-# optimize for size
-opt-level = 'z'
+[[bin]]
+name = "falcon"
+path = "src/main.rs"
 
 [dependencies]
 anyhow = "1.0.42"

@@ -4,11 +4,11 @@ use base64;
 use clap::{App, Arg, ArgMatches};
 use pqcrypto_falcon::{falcon1024, falcon512};
 use pqcrypto_traits::sign::{PublicKey, SecretKey, SignedMessage};
+#[cfg(not(target_os = "windows"))]
+use std::os::unix::fs::PermissionsExt;
 use std::{
     fs::{self, File},
     io::{self, Read, Write},
-    #[cfg(not(target_os = "windows"))]
-    os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
 };
 
@@ -60,11 +60,11 @@ fn dump_output(clap: &ArgMatches, bytes: &[u8]) -> Result<()> {
 
 fn main() -> Result<()> {
     let clap = App::new("pq-falcon-sigs")
-        .version("0.1.0")
+        .version("0.1.1")
         .author("chiefbiiko <hello@nugget.digital>")
         .about("Sign and verify files with the post-quantum signature scheme FALCON")
-        .after_help("If no input/output file(s) are given stdin/stdout are used for IO.")
-        .after_long_help("If no input/output file(s) are given stdin/stdout are used for IO.")
+        .after_help("If no input/output file(s) are given stdin/stdout are used for IO")
+        .after_long_help("If no input/output file(s) are given stdin/stdout are used for IO")
         .arg(
             Arg::new("keygen")
                 .short('K')

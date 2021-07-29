@@ -6,31 +6,34 @@ CLI tool to sign and verify files with the post-quantum signature scheme [FALCON
 
 ## Installation
 
-With `cargo`
+**With `cargo`**
 
 ``` bash
-cargo install --git https://github.com/chiefbiiko/pq-falcon-sigs#0.1.0
+cargo install --git https://github.com/chiefbiiko/pq-falcon-sigs#0.1.1
 ```
 
-Or `curl` a prebuilt from GitHub Releases
+The tool will come available on your command line as `falcon`
+
+**Or `curl`**
 
 ``` bash
-release_url=https://github.com/chiefbiiko/pq-falcon-sigs/releases/download/v0.1.0/pq-falcon-sigs-v0.1.0-x86_64-unknown-linux-gnu.gz
+release_url=https://github.com/chiefbiiko/pq-falcon-sigs/releases/download/v0.1.1/pq-falcon-sigs-v0.1.1-x86_64-unknown-linux-gnu.gz
 
-curl -fsSL $release_url | gunzip > /usr/local/bin/pq-falcon-sigs
+curl -fsSL $release_url | gunzip > /usr/local/bin/falcon
+chmod u+x /usr/local/bin/falcon
 ```
 
-Prebuilds are available for Linux, and macOS ~~, Windows~~
+Find current prebuilds for Linux, and macOS ~~, Windows~~ on the [releases page](https://github.com/chiefbiiko/pq-falcon-sigs/releases/latest)
 
 ## Usage
 
-``` bash
-pq-falcon-sigs 0.1.0
+```
+pq-falcon-sigs 0.1.1
 chiefbiiko <hello@nugget.digital>
 Sign and verify files with the post-quantum signature scheme FALCON
 
 USAGE:
-    pq-falcon-sigs [FLAGS] [OPTIONS] [FILE]
+    falcon [FLAGS] [OPTIONS] [FILE]
 
 ARGS:
     <FILE>    Input file
@@ -51,7 +54,7 @@ OPTIONS:
     -p <public-key-file>        Public key file; default: ~/.pq-falcon-sigs/public.key
     -s <secret-key-file>        Secret key file; default: ~/.pq-falcon-sigs/secret.key
 
-If no input/output file(s) are given stdin/stdout are used for IO.
+If no input/output file(s) are given stdin/stdout are used for IO
 ```
 
 ## License
