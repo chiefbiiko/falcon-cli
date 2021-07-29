@@ -57,11 +57,11 @@ jobs:
 
       - name: gzipup the binary
         if: ${{ matrix.os != 'windows-2019' }}
-        run: gzip -c ./target/release/pq-falcon-sigs > ./pq-falcon-sigs.gz
+        run: gzip -c ./target/release/falcon > ./falcon.gz
 
       - name: sha256sum the gzipd binary
         if: ${{ matrix.os == 'ubuntu-20.04' }}
-        run: sha256sum -b ./pq-falcon-sigs.gz | grep -oE '^[a-f0-9]+' > ./pq-falcon-sigs.gz.sha256sum
+        run: sha256sum -b ./falcon.gz | grep -oE '^[a-f0-9]+' > ./falcon.gz.sha256sum
 
       - name: download the release upload url artifact
         uses: actions/download-artifact@v2.0.8
@@ -78,7 +78,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ env.RELEASE_UPLOAD_URL }}
-          asset_path: ./pq-falcon-sigs.gz.sha256sum
+          asset_path: ./falcon.gz.sha256sum
           asset_name: pq-falcon-sigs-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz.sha256sum
           asset_content_type: application/gzip
 
@@ -89,7 +89,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ env.RELEASE_UPLOAD_URL }}
-          asset_path: ./pq-falcon-sigs.gz
+          asset_path: ./falcon.gz
           asset_name: pq-falcon-sigs-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz
           asset_content_type: application/gzip
 
@@ -100,7 +100,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ env.RELEASE_UPLOAD_URL }}
-          asset_path: ./pq-falcon-sigs.gz
+          asset_path: ./falcon.gz
           asset_name: pq-falcon-sigs-${{ env.PUSHED_TAG }}-x86_64-apple-darwin.gz
           asset_content_type: application/gzip
 
