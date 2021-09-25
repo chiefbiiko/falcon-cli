@@ -62,7 +62,7 @@ fn dump_output(clap: &ArgMatches, bytes: &[u8]) -> Result<()> {
 }
 
 fn main() -> Result<()> {
-    let clap = App::new("pq-falcon-sigs")
+    let clap = App::new("falcon-cli")
         .version("0.1.2")
         .author("chiefbiiko <hello@nugget.digital>")
         .about("Sign and verify files with the post-quantum signature scheme FALCON")
@@ -85,13 +85,13 @@ fn main() -> Result<()> {
             Arg::new("public-key-file")
                 .short('p')
                 .takes_value(true)
-                .about("Public key file; default: ~/.pq-falcon-sigs/public.key"),
+                .about("Public key file; default: ~/.falcon-cli/public.key"),
         )
         .arg(
             Arg::new("secret-key-file")
                 .short('s')
                 .takes_value(true)
-                .about("Secret key file; default: ~/.pq-falcon-sigs/secret.key"),
+                .about("Secret key file; default: ~/.falcon-cli/secret.key"),
         )
         .arg(
             Arg::new("open")
@@ -139,11 +139,11 @@ fn main() -> Result<()> {
     let pk_file = clap
         .value_of("public-key-file")
         .map(PathBuf::from)
-        .unwrap_or_else(|| home_dir.join(".pq-falcon-sigs/public.key"));
+        .unwrap_or_else(|| home_dir.join(".falcon-cli/public.key"));
     let sk_file = clap
         .value_of("secret-key-file")
         .map(PathBuf::from)
-        .unwrap_or_else(|| home_dir.join(".pq-falcon-sigs/secret.key"));
+        .unwrap_or_else(|| home_dir.join(".falcon-cli/secret.key"));
 
     if clap.is_present("keygen") {
         keygen(&clap, pk_file.as_path(), sk_file.as_path())?;

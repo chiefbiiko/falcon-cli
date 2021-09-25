@@ -1,5 +1,5 @@
 [package]
-name = "pq-falcon-sigs"
+name = "falcon-cli"
 version = "0.1.2"
 authors = ["chiefbiiko hello@nugget.digital>"]
 edition = "2018"
