@@ -53,8 +53,8 @@ Outcome
 ```bash
 cmp ./opened.txt ./file.txt
 cat ./opened.txt ./file.txt
-msg 2 sign safely post quantum
-msg 2 sign safely post quantum
+# msg 2 sign safely post quantum
+# msg 2 sign safely post quantum
 ```
 
 ## Docs
