@@ -132,20 +132,6 @@ fn main() -> Result<()> {
         .arg(Arg::new("FILE").about("Input file").index(1))
         .get_matches();
 
-    let mut file_buf: Vec<u8> = Vec::new();
-    let mut file_rdr: Box<dyn Read> =
-        if let Some(filename) = clap.value_of("file") {
-            Box::new(File::open(filename)?)
-        } else if let Some(filename) = clap.value_of("FILE") {
-            Box::new(File::open(filename)?)
-        } else {
-            if atty::is(Stream::Stdin) {
-                bail!("no incoming data in stdin")
-            }
-            Box::new(io::stdin())
-        };
-    let _n = file_rdr.read_to_end(&mut file_buf)?;
-
     let home_dir = home::home_dir().ok_or(anyhow!("cannot find home dir"))?;
     let pk_file = clap
         .value_of("public-key-file")
@@ -160,6 +146,20 @@ fn main() -> Result<()> {
         keygen(&clap, pk_file.as_path(), sk_file.as_path())?;
         return Ok(());
     }
+
+    let mut file_buf: Vec<u8> = Vec::new();
+    let mut file_rdr: Box<dyn Read> =
+        if let Some(filename) = clap.value_of("file") {
+            Box::new(File::open(filename)?)
+        } else if let Some(filename) = clap.value_of("FILE") {
+            Box::new(File::open(filename)?)
+        } else {
+            if atty::is(Stream::Stdin) {
+                bail!("no incoming data in stdin")
+            }
+            Box::new(io::stdin())
+        };
+    let _n = file_rdr.read_to_end(&mut file_buf)?;
 
     match clap.value_of("degree") {
         Some(degree) if degree == "512" => {
