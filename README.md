@@ -32,27 +32,27 @@ Find current prebuilds for Linux, and macOS ~~, Windows~~ on the [releases page]
 If not havin' generated a key pair yet (default location `~/.falcon-cli`) do it now
 
 ```bash
-🌍 ~/falcon-demo 🎹 falcon --keygen
+falcon --keygen
 ```
 
 A test file to roundtrip
 
 ```bash
-🌍 ~/falcon-demo 🎹 echo "msg 2 sign safely post quantum" > file.txt
+echo "msg 2 sign safely post quantum" > file.txt
 ```
 
 Signin' and openin' - here we are explcititely referencin' the secret and public key with the `-s` and `-p` options respectively
 
 ```bash
-🌍 ~/falcon-demo 🎹 falcon -S -o signed.txt -s ~/.falcon-cli/secret.key ./file.txt
-🌍 ~/falcon-demo 🎹 falcon -O -o opened.txt -p ~/.falcon-cli/public.key ./signed.txt
+falcon -S -o signed.txt -s ~/.falcon-cli/secret.key ./file.txt
+falcon -O -o opened.txt -p ~/.falcon-cli/public.key ./signed.txt
 ```
 
 Outcome
 
 ```bash
-🌍 ~/falcon-demo 🎹 cmp ./opened.txt ./file.txt
-🌍 ~/falcon-demo 🎹 cat ./opened.txt ./file.txt
+cmp ./opened.txt ./file.txt
+cat ./opened.txt ./file.txt
 msg 2 sign safely post quantum
 msg 2 sign safely post quantum
 ```
