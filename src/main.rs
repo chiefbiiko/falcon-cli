@@ -22,16 +22,19 @@ fn keygen(clap: &ArgMatches, pk_file: &Path, sk_file: &Path) -> Result<()> {
             (Box::new(pk), Box::new(sk))
         };
 
+    let key_dir = sk_file.parent().unwrap_or(Path::new("/"));
     let pk_file_exists = pk_file.exists();
     let sk_file_exists = sk_file.exists();
 
     if !pk_file_exists || (pk_file_exists && clap.is_present("force")) {
+        fs::create_dir_all(&key_dir)?;
         fs::write(&pk_file, pk.as_bytes())?;
     } else if pk_file_exists && !clap.is_present("force") {
         bail!("not overwriting existing public key file");
     }
 
     if !sk_file_exists || (sk_file_exists && clap.is_present("force")) {
+        fs::create_dir_all(&key_dir)?;
         fs::write(&sk_file, sk.as_bytes())?;
         #[cfg(not(target_os = "windows"))]
         fs::set_permissions(&sk_file, fs::Permissions::from_mode(0o600))?;
@@ -60,7 +63,7 @@ fn dump_output(clap: &ArgMatches, bytes: &[u8]) -> Result<()> {
 
 fn main() -> Result<()> {
     let clap = App::new("pq-falcon-sigs")
-        .version("0.1.1")
+        .version("0.1.2")
         .author("chiefbiiko <hello@nugget.digital>")
         .about("Sign and verify files with the post-quantum signature scheme FALCON")
         .after_help("If no input/output file(s) are given stdin/stdout are used for IO")

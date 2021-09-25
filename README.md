@@ -9,15 +9,17 @@ CLI tool to sign and verify files with the post-quantum signature scheme [FALCON
 **With `cargo`**
 
 ``` bash
-cargo install --git https://github.com/chiefbiiko/pq-falcon-sigs#0.1.1
+cargo install --git https://github.com/chiefbiiko/pq-falcon-sigs#0.1.2
 ```
 
 The tool will come available on your command line as `falcon`
 
+To install and compile successfully make sure you are at least using `rustc 1.55.0`
+
 **Or `curl`**
 
 ``` bash
-release_url=https://github.com/chiefbiiko/pq-falcon-sigs/releases/download/v0.1.1/pq-falcon-sigs-v0.1.1-x86_64-unknown-linux-gnu.gz
+release_url=https://github.com/chiefbiiko/pq-falcon-sigs/releases/download/v0.1.2/pq-falcon-sigs-v0.1.1-x86_64-unknown-linux-gnu.gz
 
 curl -fsSL $release_url | gunzip > /usr/local/bin/falcon
 chmod u+x /usr/local/bin/falcon
@@ -27,8 +29,38 @@ Find current prebuilds for Linux, and macOS ~~, Windows~~ on the [releases page]
 
 ## Usage
 
+If not havin' generated a key pair yet (default location `~/.pq-falcon-sigs`) do it now
+
+```bash
+🌍 ~/falcon-demo 🎹 falcon --keygen
 ```
-pq-falcon-sigs 0.1.1
+
+A test file to roundtrip
+
+```bash
+🌍 ~/falcon-demo 🎹 echo "msg 2 sign safely post quantum" > file.txt
+```
+
+Signin' and openin' - here we are explcititely referencin' the secret and public key with the `-s` and `-p` options respectively
+
+```bash
+🌍 ~/falcon-demo 🎹 falcon -S -o signed.txt -s ~/.pq-falcon-sigs/secret.key ./file.txt
+🌍 ~/falcon-demo 🎹 falcon -O -o opened.txt -p ~/.pq-falcon-sigs/public.key ./signed.txt
+```
+
+Outcome
+
+```bash
+🌍 ~/falcon-demo 🎹 cmp ./opened.txt ./file.txt
+🌍 ~/falcon-demo 🎹 cat ./opened.txt ./file.txt
+msg 2 sign safely post quantum
+msg 2 sign safely post quantum
+```
+
+## Docs
+
+```
+pq-falcon-sigs 0.1.2
 chiefbiiko <hello@nugget.digital>
 Sign and verify files with the post-quantum signature scheme FALCON
 
