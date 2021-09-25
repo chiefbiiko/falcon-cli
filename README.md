@@ -19,7 +19,7 @@ To install and compile successfully make sure you are at least using `rustc 1.55
 **Or `curl`**
 
 ``` bash
-release_url=https://github.com/chiefbiiko/falcon-cli/releases/download/v0.1.2/falcon-cli-v0.1.1-x86_64-unknown-linux-gnu.gz
+release_url=https://github.com/chiefbiiko/falcon-cli/releases/download/v0.1.2/falcon-cli-v0.1.2-x86_64-unknown-linux-gnu.gz
 
 curl -fsSL $release_url | gunzip > /usr/local/bin/falcon
 chmod u+x /usr/local/bin/falcon
