@@ -38,14 +38,14 @@ falcon --keygen
 A test file to roundtrip
 
 ```bash
-echo "msg 2 sign safely post quantum" > file.txt
+echo "msg 2 sign safely post quantum" > ./file.txt
 ```
 
-Signin' and openin' - here we are explcititely referencin' the secret and public key with the `-s` and `-p` options respectively
+Signin' and openin' - here explcititely referencin' secret and public key with the `-s` and `-p` options respectively
 
 ```bash
-falcon -S -o signed.txt -s ~/.falcon-cli/secret.key ./file.txt
-falcon -O -o opened.txt -p ~/.falcon-cli/public.key ./signed.txt
+falcon -S -o ./signed.txt -s ~/.falcon-cli/secret.key ./file.txt
+falcon -O -o ./opened.txt -p ~/.falcon-cli/public.key ./signed.txt
 ```
 
 Outcome
@@ -61,7 +61,9 @@ cat ./opened.txt ./file.txt
 
 ```
 falcon-cli 0.1.2
+
 chiefbiiko <hello@nugget.digital>
+
 Sign and verify files with the post-quantum signature scheme FALCON
 
 USAGE:
@@ -72,17 +74,17 @@ ARGS:
 
 FLAGS:
     -F, --force      Overwrites possibly existing key files
-    -h, --help       Prints help information
+    -h, --help       Print help information
     -K, --keygen     Generates a fresh FALCON keypair
     -O, --open       Verifies a file
     -S, --sign       Signs a file
-    -V, --version    Prints version information
+    -V, --version    Print version information
 
 OPTIONS:
     -d <degree>                 512 or 1024; default 1024
     -f <file>                   Input file
-    -o <output>                 Output file
     -k <public-key>             Base64 public key
+    -o <output>                 Output file
     -p <public-key-file>        Public key file; default: ~/.falcon-cli/public.key
     -s <secret-key-file>        Secret key file; default: ~/.falcon-cli/secret.key
 
